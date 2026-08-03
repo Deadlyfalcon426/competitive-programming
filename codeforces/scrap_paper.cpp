@@ -1,14 +1,4 @@
-
-#include <iostream>
-using namespace std;
-int main(){
-    //input
-    int test_cases;
-    cin >> test_cases;
-    for (int tcase = 0; tcase<test_cases; tcase++){
-
-    }
-}
+//this area is just to write down thoughts during contests, pay it no mind, id delete it and remake it every time but its too much work
 /*
 Here, I'll be writing out pseudocode and stuff im testing, perhaps even notes.
 best_switch_number = vector.size()-1
