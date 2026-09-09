@@ -9,101 +9,212 @@ LANG: C++
 #include <algorithm>
 #include <string>
 using namespace std;
+int mod(int a, int b) {
+    return ((a % b) + b) % b;
+}
 int main(){
     ofstream fout ("beads.out");
     ifstream fin ("beads.in");
     //output section
     int n;
     fin >> n;
-    string necklace;
-    fin >> necklace;
+    string str;
+    fin >> str;
 
-    string necklace_new = necklace+necklace;//add it to itself
-    
+    //initilaizations
+    string necklace = str+str;//add it to itself
     vector<pair<char, int>> sections;
+    vector<pair<char, string>> same_runs;
+    //split for same-runs
     int idx = 0;
-    char type = necklace_new.at(0);
-    int new_start = 0;
+    char type = necklace.at(idx);
+    int start_point = 0;
     while(true){
-        if(idx>=necklace_new.size()){
-            sections.push_back(make_pair(type, idx-new_start));//if we max
-            break;//only break if we run out of space
+        if(idx>=necklace.size()){
+            if(same_runs[same_runs.size()-1].first==same_runs[0].first){
+                same_runs[0].second=necklace.substr(start_point)+same_runs[0].second;
+            }
+            break;
         }
-        char this_index = necklace_new.at(idx);//convenience
-        if(this_index==type || this_index=='w'){//if same type or if w, we absorb w immediately NOTE THIS IS NOT TRUE, WE DONT KNOW IF TO ABSORB IMMEDIATE OR NOT
-            /*ok u see the above thing... 
-            well we did reverse to fix it, but like theres one dumb situation 
-            where front is reverse back is not so reverse. 
-            we could treat w as pivot point but that sounds really annoying
-            we need to patch together reverse sections and not reverse sections somehow
-            but i feel like the only straightforward way to do that is modifying the w behavior
-            but that kinda tanks space complexity i feel just cause of its stupidity
-            */
-            idx++;//advance
+        char this_index = necklace.at(idx);
+        if(this_index!=type){
+            same_runs.push_back(make_pair(type, necklace.substr(start_point, idx-start_point)));
+            type=this_index;
+            start_point=idx;
+        }
+        idx++;
+    }
+    //next, we want to merge sections that are sandwiched
+    //this is like technically recursive so i'd say this section is like borderline o(n^2)
+    int ppp = -1;
+    for(int i = 0; i<same_runs.size();i++){
+        
+        if(i>=same_runs.size()-2){
+            if(i==same_runs.size()-2){
+            int start = i;
+            int mid = i+1;
+            int end = 0;
+            if(same_runs[start].first==same_runs[end].first){
+                if(same_runs[mid].first=='w'){
+                    //i would say id rather have the end be chopped off than to take stuff from the front
+                    //so we will add to the end cause thats the front now
+                    string temp = "";
+                    for(auto s : same_runs[mid].second){
+                        temp+=same_runs[start].first;
+                    }//this is the converted middle string
+                    temp=same_runs[start].second+temp;//technically the order doesnt matter cause all same letter
+                    same_runs[end].second += temp;//adding it to the first, yeah here we reverse order but ts doesnt matter
+                    same_runs.erase(same_runs.begin()+mid);//erase second
+                    same_runs.erase(same_runs.begin()+start);//erase third, which became new second
+                    i=ppp;
+                    continue;
+                }
+            }
+            }else if(i==same_runs.size()-1){
+            int start = i;
+            int mid = 0;
+            int end = 1;
+            if(same_runs[start].first==same_runs[end].first){
+                if(same_runs[mid].first=='w'){
+                    string temp = "";
+                    for(auto s : same_runs[mid].second){
+                        temp+=same_runs[start].first;
+                    }//this is the converted middle string
+                    //so here, i'd rather delete the last and second strings
+                    same_runs[mid].second=temp;//update middle string
+                    same_runs[mid].second += same_runs[start].second + same_runs[end].second;//add on strings, order dont matter
+                    same_runs.erase(same_runs.begin()+start);//erase last string
+                    same_runs.erase(same_runs.begin()+end);//erase second string
+                    i=ppp;
+                    continue;
+                }
+            }
+        }
+            else{
+            //so, you managed to escape the matrix? heres a reward so you dont get stuck here again, good luck in the enxt layer...
+            ppp++;
             continue;
-        }else{
-            if(type=='w'){//adapt type, also we start by adapting type... wait we can start with the first char cause its either b/r or w anyway
-                type=this_index;//change type
-                idx++;//advance
+        }
+        }
+        if(same_runs[i].first==same_runs[i+2].first){
+            if(same_runs[i+1].first=='w'){
+                string temp = "";
+                for(auto s : same_runs[i+1].second){
+                    temp+=same_runs[i].first;
+                }
+                temp+=same_runs[i+2].second;
+                same_runs[i].second += temp;//adding it to the first
+                same_runs.erase(same_runs.begin()+i+2);//erase third
+                same_runs.erase(same_runs.begin()+i+1);//erase second
+                //first iteration, first is at zero, i is at 2. 
+                //now that the stuff there is gone, where do we put i?
+                //i needs to be 2 ahead of the enxt guy, so it needs to be at 3
+                //no need to change i then
+                //lowk im going to make i reset the whole freaking loop because like that way we get a full sweep...
+                //we will see how this goes
+                i=ppp;
                 continue;
-            } else{//time to switch type
-                sections.push_back(make_pair(type, idx-new_start));//create new pair
-                type=this_index;//change type to new guy
-                new_start=idx;//change begin point of new section for length calc
-                idx++;//advance
-                continue;
+            } else{
+                //so, you managed to escape the matrix? heres a reward so you dont get stuck here again, good luck in the enxt layer...
+                ppp++;
             }
         }
     }
-    //now we need to iterate through our spanking new list
-    if(sections.size()==1){//situation of full list of b, w, or r, for which we can count sections for
-        fout << n << "\n";
-        return 0;
-    } 
-    int largest_length = 0;
-    for(int i = 0; i<sections.size()-1;i++){
-        if(largest_length < sections[i].second + sections[i+1].second){
-            largest_length = sections[i].second + sections[i+1].second;
-        }
-    }
-
-
-    //now reverse!!!!!!! cause w isnt always like good to do like that? 
-    sections={};
-    string necklace_new_reverse(necklace_new.rbegin(), necklace_new.rend());
-    idx = 0;
-    type = necklace_new_reverse.at(0);
-    new_start = 0;
-    while(true){
-        if(idx>=necklace_new_reverse.size()){//LMAO THIS TOOK ME SO LONG TO CATCH BUT I WAS DOING JUST N BEFORE! KUDOS TO VS CODE DEBUGGER I LEARNED HOW TO USE IT
-            sections.push_back(make_pair(type, idx-new_start));//if we max
-            break;//only break if we run out of space
-        }
-        char this_index = necklace_new_reverse.at(idx);//convenience
-        if(this_index==type || this_index=='w'){//if same type or if w, we absorb w immediately NOTE THIS IS NOT TRUE, WE DONT KNOW IF TO ABSORB IMMEDIATE OR NOT
-            idx++;//advance
-            continue;
-        }else{
-            if(type=='w'){//adapt type, also we start by adapting type... wait we can start with the first char cause its either b/r or w anyway
-                type=this_index;//change type
-                idx++;//advance
-                continue;
-            } else{//time to switch type
-                sections.push_back(make_pair(type, idx-new_start));//create new pair
-                type=this_index;//change type to new guy
-                new_start=idx;//change begin point of new section for length calc
-                idx++;//advance
-                continue;
+    //merge set up complete, its beautiful
+    //note: it has not bonded front and back sections yet.
+    //newnote: after trials and tribulation we have done that part!
+    //lastly we have look at each w section and then we run our O(n^2) part
+    int largest_run=0;
+    int len = same_runs.size();
+    for(int i = 0; i<len;i++){
+        auto sect = same_runs[i];
+        int current_run_l = 0;
+        int current_run_r = 0;
+        int counter = 1;
+        type=sect.second.at(0);
+        while(true){
+            if(counter>=len){
+                break;
             }
-        }
-    }
-    //check this list, notably without resetting largest length
-    for(int i = 0; i<sections.size()-1;i++){
-        if(largest_length < sections[i].second + sections[i+1].second){
-            largest_length = sections[i].second + sections[i+1].second;
+            if(same_runs[mod((i-counter),len)].first=='w'){
+                current_run_l+=same_runs[mod((i-counter),len)].second.size();
+                counter++;
+                continue;
+            } else if(same_runs[mod((i-counter),len)].first!=type){
+                if(type=='w'){
+                    type=same_runs[mod((i-counter),len)].first;
+                    current_run_l+=same_runs[mod((i-counter),len)].second.size();
+                    counter++;
+                    continue;
+                } else if((type=='b' || type=='r')){
+                    break;
+                }
+            } else if(same_runs[mod((i-counter),len)].first==type){
+                current_run_l+=same_runs[mod((i-counter),len)].second.size();
+                counter++;
+                continue;
+                }
+            }
+        //backwards one
+        counter=1;
+        type='w';
+        while(true){
+                if(counter>=len){
+                    break;
+                }
+                if(same_runs[mod((i+counter),len)].first=='w'){
+                    current_run_r+=same_runs[mod((i+counter),len)].second.size();
+                    counter++;
+                    continue;
+                } else if(same_runs[mod((i+counter),len)].first!=type){
+                    if(type=='w'){
+                        type=same_runs[mod((i+counter),len)].first;
+                        current_run_r+=same_runs[mod((i+counter),len)].second.size();
+                        counter++;
+                        continue;
+                    } else if((type=='b' || type=='r') ){
+                        break;
+                    }
+                } else if(same_runs[mod((i+counter),len)].first==type){
+                    current_run_r+=same_runs[mod((i+counter),len)].second.size();
+                    counter++;
+                    continue;
+                }
+                
+            }
+        //joiner
+        int largest_of_2 = current_run_l+ current_run_r;
+        if(largest_of_2+sect.second.size()>largest_run){
+            largest_run = largest_of_2+sect.second.size();
         }
     }
     
-    fout << largest_length << "\n";
+    fout << largest_run << "\n";
     return 0;
 }
+/*
+Notes:
+Now, we're going to try something with invariants, we are going to find out good breakpoints. 
+What would be a dumb breakpoint?
+    A dumb breakpoint would be the middle letter in bbb -> its not very useful
+    we can probably skip those.
+    one thing i want to look at -> skipping sections such as bbb, rrr, www
+    we had something a little bit like that in v1
+    w is an interesting breakpoint because thats where stuff changes, otherwise all we have is a random point that doesnt mean much
+    ok new idea, merge sort type shi-> 
+        find all runs of letters, ie rrr, bb, wwww, and make sure to loop the last one with the first if type matches
+        next, iterate over that and bond any three consecutive sections if 1st and 3rd are same type and middle is w
+        now, you should have just r and b sections interupted by the w sections
+        iterate over w sections, try to get a long ahh combo by doing this:
+            go left, 
+                add the main w section, continue until b/r, 
+                then basically continue stacking up b/r and w 
+                until we run into the opposite, then we keep stacking that one with w, 
+                we stop when we hit the first type again or if we hit our og w section
+                if we hit our og w section we can lowk just exit...
+                also there's something i've been thinking about for a long time where we only iterate over the middle section of the double necklace???
+            go right,
+            basically same thing icl
+        ok tuff plan fr fr?
+        now that we have all those sections all we gotta do was keep a running total during that bs when we were like stacking sections
+*/
