@@ -12,89 +12,98 @@ using namespace std;
 int main(){
     ofstream fout ("beads.out");
     ifstream fin ("beads.in");
+    //output section
     int n;
     fin >> n;
-
     string necklace;
     fin >> necklace;
-    vector<string> sections;
-    char new_identity = 'o';
-    for(int start_point = 0; start_point<n;){
-        int end_point = start_point+1;
-        while(true){
-            //da weird block for w start
-            if(necklace.at(start_point)=='w'){
-                if(end_point>=n){//this is to end a situation where the loop is the same thing throughout or with w or smth
-                    fout << n;
-                    return 0;
-                }
-                if(necklace.at(end_point)!='w'){
-                    if(new_identity=='o'){
-                        new_identity=necklace.at(end_point);
-                        end_point++;
-                        continue;
-                    } else if(new_identity=='b' || new_identity=='r'){
-                        if(new_identity==necklace.at(end_point)){
-                            end_point++;
-                            continue;
-                        }else{
-                            new_identity = 'o';
-                            sections.push_back( necklace.substr( start_point, end_point-start_point ) );
-                            start_point = end_point;
-                            break;
-                        }
-                    }
-                } else{
-                    end_point++;
-                    continue;
-                }
-            }
 
-
-            if(end_point<necklace.size() && (necklace.at(end_point)==necklace.at(start_point) || necklace.at(end_point)=='w')){
-                end_point++;
-            } else if(end_point>n){//if we are wrapping back around
-                if(end_point==start_point){//this is to end a situation where the loop is the same thing throughout or with w or smth
-                        fout << n;
-                        return 0;
-                }
-                if(necklace.at(end_point%n)==necklace.at(start_point) || necklace.at(end_point%n)=='w'){
-                    end_point++;
-                } else{
-                    sections.push_back( necklace.substr(start_point) + necklace.substr(start_point, end_point-start_point) );//add the start->actual end plus actual beginning to end point
-                    sections.erase(sections.begin());//remove the first since the new one joins
-                    break;//we already finished basically
-                }
-            } else{
-                sections.push_back( necklace.substr( start_point, end_point-start_point ) );
-                start_point = end_point;
-                break;
+    string necklace_new = necklace+necklace;//add it to itself
+    
+    vector<pair<char, int>> sections;
+    int idx = 0;
+    char type = necklace_new.at(0);
+    int new_start = 0;
+    while(true){
+        if(idx>=necklace_new.size()){
+            sections.push_back(make_pair(type, idx-new_start));//if we max
+            break;//only break if we run out of space
+        }
+        char this_index = necklace_new.at(idx);//convenience
+        if(this_index==type || this_index=='w'){//if same type or if w, we absorb w immediately NOTE THIS IS NOT TRUE, WE DONT KNOW IF TO ABSORB IMMEDIATE OR NOT
+            /*ok u see the above thing... 
+            well we did reverse to fix it, but like theres one dumb situation 
+            where front is reverse back is not so reverse. 
+            we could treat w as pivot point but that sounds really annoying
+            we need to patch together reverse sections and not reverse sections somehow
+            but i feel like the only straightforward way to do that is modifying the w behavior
+            but that kinda tanks space complexity i feel just cause of its stupidity
+            */
+            idx++;//advance
+            continue;
+        }else{
+            if(type=='w'){//adapt type, also we start by adapting type... wait we can start with the first char cause its either b/r or w anyway
+                type=this_index;//change type
+                idx++;//advance
+                continue;
+            } else{//time to switch type
+                sections.push_back(make_pair(type, idx-new_start));//create new pair
+                type=this_index;//change type to new guy
+                new_start=idx;//change begin point of new section for length calc
+                idx++;//advance
+                continue;
             }
         }
     }
-    if(sections.size()==1){
-        fout << n;
+    //now we need to iterate through our spanking new list
+    if(sections.size()==1){//situation of full list of b, w, or r, for which we can count sections for
+        fout << n << "\n";
         return 0;
-    }
-    vector<int> lengths = vector<int>(sections.size());
-    vector<char> types  = vector<char>(sections.size());
-    for(int i = 0; i<sections.size(); i++){
-        bool r_present = find(sections[i].begin(), sections[i].end(), 'r') != sections[i].end();
-        bool b_present = find(sections[i].begin(), sections[i].end(), 'b') != sections[i].end();
-        if(r_present) { types[i] = 'r'; }
-        if(b_present) { types[i] = 'b'; }
-        lengths[i] = sections[i].size();
-    }
-    int biggest_sum = 0;
-    for(int i = 0; i<sections.size()-1; i++){
-        if(biggest_sum<lengths[i]+lengths[i+1]){
-            biggest_sum=lengths[i]+lengths[i+1];
+    } 
+    int largest_length = 0;
+    for(int i = 0; i<sections.size()-1;i++){
+        if(largest_length < sections[i].second + sections[i+1].second){
+            largest_length = sections[i].second + sections[i+1].second;
         }
     }
-    if(biggest_sum<lengths[sections.size()-1]+lengths[0]){
-        biggest_sum=lengths[sections.size()-1]+lengths[0];
-    }
 
-    fout << biggest_sum;
+
+    //now reverse!!!!!!! cause w isnt always like good to do like that? 
+    sections={};
+    string necklace_new_reverse(necklace_new.rbegin(), necklace_new.rend());
+    idx = 0;
+    type = necklace_new_reverse.at(0);
+    new_start = 0;
+    while(true){
+        if(idx>=necklace_new_reverse.size()){//LMAO THIS TOOK ME SO LONG TO CATCH BUT I WAS DOING JUST N BEFORE! KUDOS TO VS CODE DEBUGGER I LEARNED HOW TO USE IT
+            sections.push_back(make_pair(type, idx-new_start));//if we max
+            break;//only break if we run out of space
+        }
+        char this_index = necklace_new_reverse.at(idx);//convenience
+        if(this_index==type || this_index=='w'){//if same type or if w, we absorb w immediately NOTE THIS IS NOT TRUE, WE DONT KNOW IF TO ABSORB IMMEDIATE OR NOT
+            idx++;//advance
+            continue;
+        }else{
+            if(type=='w'){//adapt type, also we start by adapting type... wait we can start with the first char cause its either b/r or w anyway
+                type=this_index;//change type
+                idx++;//advance
+                continue;
+            } else{//time to switch type
+                sections.push_back(make_pair(type, idx-new_start));//create new pair
+                type=this_index;//change type to new guy
+                new_start=idx;//change begin point of new section for length calc
+                idx++;//advance
+                continue;
+            }
+        }
+    }
+    //check this list, notably without resetting largest length
+    for(int i = 0; i<sections.size()-1;i++){
+        if(largest_length < sections[i].second + sections[i+1].second){
+            largest_length = sections[i].second + sections[i+1].second;
+        }
+    }
+    
+    fout << largest_length << "\n";
     return 0;
 }
