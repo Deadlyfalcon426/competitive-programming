@@ -30,7 +30,6 @@ int main(){
     //to address a test case where ppl start and end at the exact same time, and the tester thinks that since they do same time its continous
     for(int i = 0; i<start_and_end_times.size()-1;i++){
         if(start_and_end_times[i].first==start_and_end_times[i+1].first && start_and_end_times[i].second!=start_and_end_times[i+1].second){
-            cout << "Kill me";
             start_and_end_times[i].second = START;
             start_and_end_times[i+1].second = END;
         }
