@@ -9,23 +9,46 @@ LANG: C++
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
+#include <cmath>
 using namespace std;
+ofstream fout ("namenum.out");
+unordered_map<char, vector<string>> all_names_by_start_letter;
+bool empty1 = true;
+int recursion(vector<vector<char>> chars_available, string string_possible){
+    //we need to unpack...
+    //chars available, all names by start letter, yeah thats lowk it
+    if(chars_available.size()==0){
+        char first_char = string_possible[0];
+        auto holder = find(all_names_by_start_letter[first_char].begin(), all_names_by_start_letter[first_char].end(), string_possible);
+        if(holder != all_names_by_start_letter[first_char].end()){
+            fout << string_possible << "\n";
+            empty1=false;
+        }
+        return 0;
+    }
+    vector<char> vec = chars_available[0];
+    chars_available.erase(chars_available.begin());
+    for(auto& chr : vec){
+        string_possible+=chr;
+        recursion(chars_available, string_possible);
+        string_possible.erase(string_possible.end()-1);
+    }
+    return 0;
+}
 int main(){
     ifstream fin ("namenum.in");
-    ofstream fout ("namenum.out");
     ifstream fin_dict ("dict.txt");
     string cell_code;
     fin >> cell_code;
     string temp;
     char current = 'A';
-    unordered_map<char, vector<string>> all_names_by_start_letter;
     all_names_by_start_letter.insert({'A', {}});
     while(fin_dict >> temp){
-        if(temp.at(0)==current){
+        if(temp[0]==current){
             all_names_by_start_letter[current].push_back(temp);
         } else{
             current++;//next letter
-            all_names_by_start_letter.insert({current, {}});
+            all_names_by_start_letter.insert({current, {temp}});
         }
         temp.clear();
     }
@@ -44,13 +67,23 @@ int main(){
         {8, {'T','U','V'}},
         {9, {'W','X','Y'}}
     };
-    vector<char> chars_available;
+    vector<vector<char>> chars_available;//this can be skipped, it lowers time a little and adds a little of space.
     for(auto& num : cell_code){
-        int num = num-0;
-        chars_available.reserve(chars_available.size() + map_cell[num].size());//memorymaxxing
-        chars_available.insert(chars_available.end(), map_cell[num].begin(), map_cell[num].end());
+        int bob = num-0;
+        bob-=48;
+        chars_available.push_back(map_cell[bob]);
     }
     map_cell.clear();//done, just cleaning up
-    
+    //now, we have this sort of list : [A, B, C] , [G, H, I], [W, X, Y]
+    //holey moly this isnt that hard. we cant even reorganize.
+    //so just out of the above only AGW to CIY is possible
+    //maybe i didnt need that much preprocessing;
+    //well i gave up here goes recursion
+    string string_possible;
+    recursion(chars_available, string_possible);
+    if(empty1){
+        fout<<"NONE"<<"\n";
+    }
+    return 0;
 
 }
