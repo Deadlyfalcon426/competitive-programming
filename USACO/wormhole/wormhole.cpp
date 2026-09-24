@@ -1,0 +1,52 @@
+/*
+ID: ahsan.m1
+TASK: wormhole
+LANG: C++
+*/
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <unordered_map>
+using namespace std;
+int main(){
+    //input section complete
+    ifstream fin ("wormhole.in");
+    int n; fin >> n;
+    vector<pair<int, int>> wormholes_y_and_x;
+    for(int j = 0; j<n;j++){
+        int temp1; fin >> temp1;//x
+        int temp2; fin >> temp2;//y
+        wormholes_y_and_x.push_back(make_pair(temp2, temp1));
+    }
+    fin.close();
+    //input done
+
+    //look for guys that bessie can travel between
+    sort(wormholes_y_and_x.begin(), wormholes_y_and_x.end());
+    unordered_map<int, vector<int>> x_values_for_each_y_level;
+    int current_y = -1;
+    for(auto& wormhole : wormholes_y_and_x){
+        if(wormhole.first==current_y){
+            x_values_for_each_y_level[current_y].push_back(wormhole.second);
+        }else{
+            current_y=wormhole.first;
+            x_values_for_each_y_level[current_y] = {wormhole.second};
+        }
+    }
+    wormholes_y_and_x = {};
+    //ok now we have all y levels and their x values, sorted as well
+    //ok the issue is that we need to also find if a wormhole could insert her into an infinity loop
+    //might be worth considering like some sort of probablilty tree or brute force thing
+    
+    int amount = 0;
+    for(auto& [y_level, x_vector]: x_values_for_each_y_level){
+        amount+=x_vector.size()-1;//in betweens? plus if its 1, then adds nothing, and it cant be zero!
+    }
+
+    ofstream fout ("wormhole.out");
+    fout << amount << endl;
+    fout.close();
+    return 0;
+}
