@@ -21,7 +21,7 @@ int main(){
     for(int i = 0; i<amount_of_occupied_stalls;i++){
         int temp;
         fin >> temp;
-        contains_cow[temp] = true;
+        contains_cow[temp-1] = true;
     }
     fin.close();
     //input complete
@@ -49,7 +49,7 @@ int main(){
             amount_of_stalls_covered+=lebron.first;
         }
     }
-    if(naive_board_counter>=max_boards){
+    if(naive_board_counter>max_boards){
         int boards_to_remove = naive_board_counter-max_boards;
         fout << annoying_part(state_tracking, boards_to_remove) << "\n";
         return 0;
@@ -61,8 +61,7 @@ int main(){
 int annoying_part(vector<pair<int, bool>>& state_tracking, int boards_to_remove){
     //begin the hard type stuff
     vector<pair<int, int>> no_cow_amount_and_idx;
-    int last_end = 0;
-    for(int i = 0; i<state_tracking.size();i++){
+    for(int i = 1; i<state_tracking.size()-1;i++){//doesnt benefit to take first or last! and this one doesnt care for cow holders!!!
         if(state_tracking[i].second==false){
             no_cow_amount_and_idx.push_back(make_pair(state_tracking[i].first, i));
         }
