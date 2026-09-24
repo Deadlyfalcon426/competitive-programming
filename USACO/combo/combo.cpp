@@ -18,11 +18,11 @@ int main(){
     int n; fin >> n;
     vector<int> john_locke = vector<int>(3);
     vector<int> master_lock = vector<int>(3);
-    for(auto& fhjfk : john_locke){
-        fin >> fhjfk;
+    for(auto& j : john_locke){
+        fin >> j;
     }
-    for(auto& fhjfk : master_lock){
-        fin >> fhjfk;
+    for(auto& j : master_lock){
+        fin >> j;
     }
     fin.close();
     //input complete
