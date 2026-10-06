@@ -3,50 +3,111 @@ ID: ahsan.m1
 TASK: wormhole
 LANG: C++
 */
+
+/*
+i had to consult an editorial in order to figure this one out. 
+I will take substantial notes in order to learn from my loss and analyze the foreign solution
+its not going well because i cant find any editorials and just code
+i guess i will be reverse engineering a lot of what is happening
+
+so i still had to write it out and adapt it to my style
+cause the guy who wrote it 12 years ago had really bad style and mine is cleaner and excessively commented
+anything for learning ig
+*/
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <utility>
 #include <algorithm>
-#include <unordered_map>
 using namespace std;
+
+//number of wormholes, <=12
+int n;
+/*
+we store x & y values (parallel array),
+partner of each wormhole, probably by index
+wormholes that could lead to a loop, ones that are on the same line
+*/
+vector<int> x, y, partner, next_wormhole;
+
+bool cycle_exists();
+int solve();
 int main(){
-    //input section complete
+    //input section
     ifstream fin ("wormhole.in");
-    int n; fin >> n;
-    vector<pair<int, int>> wormholes_y_and_x;
-    for(int j = 0; j<n;j++){
-        int temp1; fin >> temp1;//x
-        int temp2; fin >> temp2;//y
-        wormholes_y_and_x.push_back(make_pair(temp2, temp1));
+    fin >> n;
+    x = vector<int>(n+1);//since vector is reference object type thing i cant assign them all same thing
+    y = vector<int>(n+1);
+    partner = vector<int>(n+1);
+    next_wormhole = vector<int>(n+1);
+    for(int j = 1; j<=n;j++){
+        fin >> x[j];//x
+        fin >> y[j];//y
     }
     fin.close();
-    //input done
+    //input section complete
 
-    //look for guys that bessie can travel between
-    sort(wormholes_y_and_x.begin(), wormholes_y_and_x.end());
-    unordered_map<int, vector<int>> x_values_for_each_y_level;
-    int current_y = -1;
-    for(auto& wormhole : wormholes_y_and_x){
-        if(wormhole.first==current_y){
-            x_values_for_each_y_level[current_y].push_back(wormhole.second);
-        }else{
-            current_y=wormhole.first;
-            x_values_for_each_y_level[current_y] = {wormhole.second};
+    for(int i=1;i<=n;i++){//iterate through all wormholes
+        for(int j=1;j<=n;j++){//iterating over all second wormholes
+            if(x[j]>x[i] && y[j] == y[i]){//if they share same line and second is to the right:  (also note that this prevents using the same wormhole twice)
+                if(next_wormhole[i]==0 || x[j]-x[i] < x[next_wormhole[i]]-x[i]){
+                    /*
+                    if either the next wormhole hasnt been set,
+                    or 
+                    if the new j is closer than the old next wormhole
+
+                    might be worth a test to see if the first condition is unnecessary
+                    */
+                    next_wormhole[i] = j;//so if that happens we reach for the closer loop
+                }
+            }
         }
     }
-    wormholes_y_and_x = {};
-    //ok now we have all y levels and their x values, sorted as well
-    //ok the issue is that we need to also find if a wormhole could insert her into an infinity loop
-    //might be worth considering like some sort of probablilty tree or brute force thing
-    
-    int amount = 0;
-    for(auto& [y_level, x_vector]: x_values_for_each_y_level){
-        amount+=x_vector.size()-1;//in betweens? plus if its 1, then adds nothing, and it cant be zero!
-    }
+    //essentially, the above code is used to find any same level loops
 
+    //output section
     ofstream fout ("wormhole.out");
-    fout << amount << endl;
+    fout << solve() << endl;
     fout.close();
     return 0;
+}
+
+int solve(){
+    int i, total = 0;
+    for(i = 1; i<n+1; i++){//gives back the first index that isnt filled with a partner
+        if(partner[i]==0){
+            break;
+        }
+    }
+
+    if(i>n){//well perhaps everyone has been paired
+        if(cycle_exists()){//so before writing cycle_exists i realize that this is what does the logic based on whichever pair combo iteration we are on
+            return 1;//that would be the extra point ig
+        }else{
+            return 0;
+        }
+    }
+
+    //now try pairing partnerless i with all other wormholes
+    for(int j = i+1; j<=n; j++){
+        if(partner[j] == 0){//if partner not set
+            partner[i] = j;
+            partner[j] = i;
+            total += solve();
+            partner[i] = partner[j] = 0;//reset, clean up as we exit the call stack
+        }
+    }
+
+    return total; //end of recursion, bottom of call stack
+}
+bool cycle_exists(){//so this one is supposed to search for across thingies or sum
+    for(int start = 1; start<n+1; start++){//iterate over partners list
+        int pos = start;
+        for(int count = 1; count<n+1; count++){//iterate over full list
+            pos = next_wormhole[partner[pos]];//jump from each partner's next wormhole???
+        }
+        if(pos != 0){//well if we end up outside of it i guess this is our situation???
+            return true;
+        }
+    }
+    return false;
 }
